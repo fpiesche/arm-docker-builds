@@ -1,0 +1,159 @@
+name: Build Funkwhale ARM Docker images
+
+on:
+  # Run every other morning, time chosen arbitrarily as a likely low-activity period.
+  # This will ensure that the images are up to date with releases on their base images.
+  schedule:
+    - cron:  '40 11 * * */2'
+  # Allow manual runs.
+  workflow_dispatch:
+  # Also run on updates to this repo.
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  funkwhale_frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: git clone https://dev.funkwhale.audio/funkwhale/funkwhale.git
+
+      - name: Install nodejs 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install jq
+        run: |
+          mkdir jq
+          curl -L -o ./jq/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+          chmod +x .//jq/jq
+          echo "./jq" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: yarn install
+        working-directory: funkwhale/front
+
+      - name: Compile i18n
+        run: yarn run i18n-compile
+        working-directory: funkwhale/front
+
+      - name: Build frontend
+        run: yarn build
+        working-directory: funkwhale/front
+
+      - name: Set mode on frontend
+        run: chmod -R 755 funkwhale/front/dist
+
+      - name: Store frontend build
+        uses: actions/upload-artifact@v2
+        with:
+          name: frontend
+          path: funkwhale/front/dist
+
+  funkwhale_aio:
+    runs-on: ubuntu-latest
+    needs: funkwhale_frontend
+
+    env:
+      ALL_IN_ONE_ARTIFACT_URL: https://github.com/thetarkus/docker-funkwhale/archive/master.zip
+      BUILD_PATH: all_in_one
+
+    steps:
+      - run: git clone https://dev.funkwhale.audio/funkwhale/funkwhale.git
+  
+      - name: Get current commit SHAsum
+        run: echo "CI_COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        working-directory: funkwhale
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v2
+        with:
+          name: frontend
+          path: funkwhale/front/dist
+      
+      - name: Set build metadata
+        run: ./scripts/set-api-build-metadata.sh $(echo $CI_COMMIT_SHA | cut -c 1-8)
+        working-directory: funkwhale
+
+      - name: Download Funkwhale all-in-one build
+        run: |
+          wget ${{env.ALL_IN_ONE_ARTIFACT_URL}} -O all_in_one.zip
+          unzip -o all_in_one.zip -d tmpdir
+          mv tmpdir/docker-funkwhale-master ${{env.BUILD_PATH}}
+          rmdir tmpdir
+          cp -r api ${{env.BUILD_PATH}}/src/api
+          cp -r front ${{env.BUILD_PATH}}/src/front
+          cd ${{env.BUILD_PATH}}
+          ./scripts/download-nginx-template.sh src/ master
+        working-directory: funkwhale
+
+      - name: Docker Setup QEMU
+        uses: docker/setup-qemu-action@v1.0.1
+
+      - name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v1.0.3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+  
+      - name: Build and push funkwhale all-in-one Docker image
+        uses: docker/build-push-action@v2.1.0
+        with:
+          context: funkwhale/${{env.BUILD_PATH}}
+          file: funkwhale/${{env.BUILD_PATH}}/Dockerfile
+          tags: florianpiesche/funkwhale-arm:latest
+          platforms: linux/arm/v6,linux/arm/v7,linux/arm64/v8
+          push: true
+
+  funkwhale:
+    runs-on: ubuntu-latest
+    needs: funkwhale_frontend
+
+    steps:
+      - run: git clone https://dev.funkwhale.audio/funkwhale/funkwhale.git
+
+      - name: Get current commit SHAsum
+        run: echo "CI_COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        working-directory: funkwhale
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v2
+        with:
+          name: frontend
+          path: funkwhale/front/dist
+      
+      - name: Copy frontend to Docker context
+        run: cp -r funkwhale/front/dist funkwhale/api/frontend
+
+      - name: Set build metadata
+        run: ./scripts/set-api-build-metadata.sh $(echo $CI_COMMIT_SHA | cut -c 1-8)
+        working-directory: funkwhale
+
+      - name: Docker Setup QEMU
+        uses: docker/setup-qemu-action@v1.0.1
+
+      - name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v1.0.3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+  
+      - name: Build and push Funkwhale-only Docker image
+        uses: docker/build-push-action@v2.1.0
+        with:
+          context: funkwhale/api
+          file: funkwhale/api/Dockerfile
+          tags: florianpiesche/funkwhale-arm:latest
+          platforms: linux/arm/v6,linux/arm/v7,linux/arm64/v8
+          push: true
