@@ -13,7 +13,7 @@ ENV MAILPILE_VERSION ${MAILPILE_VERSION}
 # Install requirements
 RUN apt-get update && apt-get install -y \
     # base system packages
-    ca-certificates git gnupg1 dirmgr gpg-agent openssl python-pip spambayes tor tzdata zlib1g \
+    ca-certificates git gnupg1 dirmngr gpg-agent openssl python-pip spambayes tor tzdata zlib1g \
     # required Python modules
     python-appdirs python-cffi python-dns python-fasteners \
     python-icalendar python-jinja2 python-lxml python-markupsafe python-pbr \
