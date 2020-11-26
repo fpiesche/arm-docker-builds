@@ -18,8 +18,7 @@ RUN apt-get update && apt-get install -y \
     python-appdirs python-cffi python-dns python-fasteners \
     python-icalendar python-jinja2 python-lxml python-markupsafe python-pbr \
     python-pgpdump python-pil python-socks python-stem \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && ln -s /usr/bin/gpg1 /usr/bin/gpg
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime && \
     echo "$TZ" > /etc/timezone && date
