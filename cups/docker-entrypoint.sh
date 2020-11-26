@@ -9,12 +9,10 @@ adduser admin lpadmin
 echo -e "${ADMIN_PASSWORD}\n${ADMIN_PASSWORD}" | passwd admin
 echo 'admin ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
-if [[ -f /setup_scripts/*.sh ]]; then
-    for script in /setup_scripts/*.sh; do
-        echo "Running ${script}..."
-        /bin/bash ${script}
-    done
-fi
+for script in /setup_scripts/*.sh; do
+    echo "Running ${script}..."
+    ${script}
+done
 
 echo "DONE! Launching cupsd."
 cupsd -f
