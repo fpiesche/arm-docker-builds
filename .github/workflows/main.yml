@@ -17,6 +17,7 @@ on:
 
 env:
   PLATFORMS: linux/arm/v6,linux/arm/v7,linux/arm64/v8
+  ARMV6_ONLY: swarmpit
 
 jobs:
 
@@ -24,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        IMAGE: ['cups', 'mailpile', 'sane', 'sftp', 'transmission', 'transmission-rss']
+        IMAGE: ['cups', 'mailpile', 'sane', 'sftp', 'swarmpit', 'transmission', 'transmission-rss']
 
     steps:
       - uses: actions/checkout@v2
@@ -58,3 +59,4 @@ jobs:
           tags: florianpiesche/${{ matrix.IMAGE }}-arm:latest
           platforms: ${{ env.PLATFORMS }}
           push: true
+        if: matrix.image not in $ARMV6_ONLY
