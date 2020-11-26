@@ -30,5 +30,4 @@ ADD docker-entrypoint.sh /docker-entrypoint.sh
 
 EXPOSE 631
 
-HEALTHCHECK CMD [ "pgrep", "cupsd" ]
 ENTRYPOINT ["/docker-entrypoint.sh"]
