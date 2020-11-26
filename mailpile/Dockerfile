@@ -7,7 +7,7 @@ ENV MAILPILE_GNUPG/GA "/usr/bin/gpg-agent"
 ENV MAILPILE_GNUPG/DM "/usr/bin/dirmngr"
 ENV MAILPILE_TOR "/usr/bin/tor"
 ENV MAILPILE_OPENSSL "/usr/bin/openssl"
-ENV MAILPILE_GNUPG "/usr/bin/gpg"
+ENV MAILPILE_GNUPG "/usr/bin/gpg1"
 ENV MAILPILE_VERSION ${MAILPILE_VERSION}
 
 # Install requirements
