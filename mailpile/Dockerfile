@@ -13,7 +13,8 @@ ENV MAILPILE_GNUPG_AGENT="/usr/bin/gpg-agent" \
 RUN apt-get update && \
     # Install basic requirements
     apt-get install -y curl apt-transport-https gnupg1 && \
-    curl -s https://packages.mailpile.is/deb/key.asc && \
+    # Update curl's CA certificate
+    curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem && \
     # Add mailpile repo
     curl -s https://packages.mailpile.is/deb/key.asc | apt-key add - && \
     echo "deb https://packages.mailpile.is/deb nightly main" | tee /etc/apt/sources.list.d/000-mailpile.list && \
