@@ -59,4 +59,4 @@ jobs:
           tags: florianpiesche/${{ matrix.IMAGE }}-arm:latest
           platforms: ${{ env.PLATFORMS }}
           push: true
-        if: matrix.image not in $ARMV6_ONLY
+        if: not contains(env.ARMV6_ONLY, matrix.IMAGE)
