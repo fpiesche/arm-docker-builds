@@ -12,7 +12,7 @@ echo 'admin ALL=(ALL:ALL) ALL' >> /etc/sudoers
 if compgen -G "/setup_scripts/*.sh" > /dev/null; then
     for script in /setup_scripts/*.sh; do
         echo "Running ${script}..."
-        ${script}
+        bash ${script}
     done
 fi
 
