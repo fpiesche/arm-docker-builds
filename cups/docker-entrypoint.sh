@@ -1,11 +1,14 @@
 #!/bin/bash -e
 
-echo "Creating print admin user..."
+echo "Setting up print admin user..."
 # add print user
-adduser --home /home/admin --shell /bin/bash --gecos "admin" --disabled-password admin
+if id "admin" &>/dev/null; then
+    adduser --home /home/admin --shell /bin/bash --gecos "admin" --disabled-password admin
+fi
 adduser admin sudo
 adduser admin lp
 adduser admin lpadmin
+
 echo -e "${ADMIN_PASSWORD}\n${ADMIN_PASSWORD}" | passwd admin
 echo 'admin ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
