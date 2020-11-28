@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-ADD cupsd.conf /etc/cups/cupsd.conf
+ADD files/* /etc/cups/
 ADD docker-entrypoint.sh /docker-entrypoint.sh
 
 EXPOSE 631
