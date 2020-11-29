@@ -61,3 +61,11 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
         if: contains(${{ env.ARMV6_ONLY }}, ${{ matrix.IMAGE }}) == false
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: florianpiesche/${{ matrix.IMAGE }}-arm
+          readme-filepath: ${{ matrix.IMAGE }}/README.md
