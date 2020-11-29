@@ -2,7 +2,7 @@
 
 echo "Setting up print admin user..."
 # add print user
-if id "admin" &>/dev/null; then
+if [ ! $(id "admin" &>/dev/null) ]; then
     adduser --home /home/admin --shell /bin/bash --gecos "admin" --disabled-password admin
 fi
 adduser admin sudo
