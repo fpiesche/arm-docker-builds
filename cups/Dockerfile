@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
   cups \
   cups-client \
   cups-bsd \
+  gnupg \
   printer-driver-all \
   printer-driver-gutenprint \
   hpijs-ppds \
@@ -25,7 +26,8 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-ADD files/* /etc/cups/
+ADD cups_config/* /etc/cups/
+ADD setup_scripts/* /setup_scripts
 ADD docker-entrypoint.sh /docker-entrypoint.sh
 
 EXPOSE 631
