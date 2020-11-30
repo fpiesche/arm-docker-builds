@@ -27,8 +27,8 @@ jobs:
     strategy:
       matrix:
         IMAGE: ['cups', 'dockergen', 'mailpile', 'letsencrypt-nginx-proxy-companion',
-                'sane', 'sftp', 'swarmpit-agent', 'transmission', 'transmission-rss',
-                'whoami']
+                'ioquake3', 'sane', 'sftp', 'swarmpit-agent', 'transmission',
+                'transmission-rss', 'whoami']
 
     steps:
       - uses: actions/checkout@v2
