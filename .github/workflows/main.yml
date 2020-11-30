@@ -23,7 +23,7 @@ jobs:
 
   build-image:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    # continue-on-error: true
     strategy:
       matrix:
         IMAGE: ['cups', 'dockergen', 'mailpile', 'letsencrypt-nginx-proxy-companion',
