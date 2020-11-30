@@ -1,54 +1,60 @@
-FROM golang:1.15-alpine AS go-builder
+FROM --platform=$TARGETPLATFORM golang:1.15-alpine AS go-builder
 
-ARG DOCKER_GEN_VERSION=0.7.4
+ENV DOCKER_GEN_VERSION=0.7.4
 
-# Install build dependencies for docker-gen
-RUN apk add --update \
+# Build docker-gen
+RUN apk add --no-cache --virtual .build-deps \
         curl \
         gcc \
         git \
         make \
-        musl-dev
-
-# Build docker-gen
-RUN go get github.com/jwilder/docker-gen \
+        musl-dev \
+    && git clone https://github.com/nginx-proxy/docker-letsencrypt-nginx-proxy-companion/ /comp \
+    && go get github.com/jwilder/docker-gen \
     && cd /go/src/github.com/jwilder/docker-gen \
-    && git checkout $DOCKER_GEN_VERSION \
+    && git -c advice.detachedHead=false checkout $DOCKER_GEN_VERSION \
     && make get-deps \
-    && make all
+    && make all \
+    && go clean -cache \
+    && mv docker-gen /usr/local/bin/ \
+    && rm -rf /go/src \
+    && apk del .build-deps
 
-RUN git clone https://github.com/nginx-proxy/docker-letsencrypt-nginx-proxy-companion/ /docker-letsencrypt-nginx-proxy-companion
 
+FROM --platform=$TARGETPLATFORM alpine
+LABEL maintainer="Nicolas Duchon <nicolas.duchon@gmail.com> (@buchdag)"
 
-FROM alpine:3.11 as image
-LABEL maintainer="Yves Blusseau <90z7oey02@sneakemail.com> (@blusseau)"
+ARG GIT_DESCRIBE
+ARG ACMESH_VERSION=2.8.7
 
-ENV DEBUG=false \
-    DOCKER_HOST=unix:///var/run/docker.sock
+ENV COMPANION_VERSION=$GIT_DESCRIBE \
+    DOCKER_HOST=unix:///var/run/docker.sock \
+    PATH=$PATH:/app
 
 # Install packages required by the image
-RUN apk add --update \
+RUN apk add --no-cache --virtual .bin-deps \
         bash \
-        ca-certificates \
         coreutils \
         curl \
+        git \
         jq \
         openssl \
-        py3-cryptography \
-    && rm /var/cache/apk/*
+        socat
 
 # Install docker-gen from build stage
-COPY --from=go-builder /go/src/github.com/jwilder/docker-gen/docker-gen /usr/local/bin/
-COPY --from=go-builder /docker-letsencrypt-nginx-proxy-companion/install_simp_le.sh /app/
-COPY --from=go-builder /docker-letsencrypt-nginx-proxy-companion/app/ /app/
+COPY --from=go-builder /usr/local/bin/docker-gen /usr/local/bin/
+COPY --from=go-builder /comp/app /app
+COPY --from=go-builder /comp/install_acme.sh /app/install_acme.sh
 
-# Install simp_le
-RUN chmod +rx /app/install_simp_le.sh \
+# Install acme.sh
+RUN chmod +rx /app/install_acme.sh \
     && sync \
-    && /app/install_simp_le.sh \
-    && rm -f /app/install_simp_le.sh
+    && /app/install_acme.sh \
+    && rm -f /app/install_acme.sh
 
 WORKDIR /app
+
+VOLUME ["/etc/acme.sh", "/etc/nginx/certs"]
 
 ENTRYPOINT [ "/bin/bash", "/app/entrypoint.sh" ]
 CMD [ "/bin/bash", "/app/start.sh" ]
