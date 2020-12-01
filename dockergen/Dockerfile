@@ -8,5 +8,6 @@ ENV DOCKER_HOST unix:///tmp/docker.sock
 
 RUN apk -U add openssl
 RUN wget -qO- $DOWNLOAD_URL | tar xvz -C /usr/local/bin
+RUN wget https://raw.githubusercontent.com/nginx-proxy/nginx-proxy/master/nginx.tmpl -O /etc/docker-gen/templates/nginx.tmpl
 
 ENTRYPOINT ["/usr/local/bin/docker-gen"]
