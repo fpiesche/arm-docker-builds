@@ -26,9 +26,8 @@ jobs:
     # continue-on-error: true
     strategy:
       matrix:
-        IMAGE: ['cups', 'dockergen', 'mailpile', 'letsencrypt-nginx-proxy-companion',
-                'ioquake3', 'sane', 'sftp', 'swarmpit-agent', 'transmission',
-                'transmission-rss', 'whoami']
+        IMAGE: ['cups', 'dockergen',  'ioquake3', 'mailpile', 'sane', 'sftp',
+                'swarmpit-agent', 'transmission', 'transmission-rss']
 
     steps:
       - uses: actions/checkout@v2
