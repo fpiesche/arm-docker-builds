@@ -18,6 +18,11 @@ fi
 
 while true; do
     service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":true}}')
+
+    if [[ ! -z $DEBUG ]]; then
+        echo "Service spec: $(echo $service_spec | jq)"
+    fi
+
     if [[ -z $service_spec ]]; then
         echo "Failed to find service ${SERVICE}!"
         exit 1
@@ -31,8 +36,13 @@ while true; do
         echo "Service ${SERVICE} found on node ${node_id}."
     fi
 
-    node_ip=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/nodes/${node_id}" | grep -Po ${IPADDR_REGEXP})
-    if [[ -z $service_spec ]]; then
+    node_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/nodes/${node_id}")
+    if [[ ! -z $DEBUG ]]; then
+        echo "Node spec: $(echo $node_spec | jq)"
+    fi
+
+    node_ip=$(echo $node_spec | grep -Po ${IPADDR_REGEXP})
+    if [[ -z $node_ip ]]; then
         echo "Failed to find IP address for node ${node_id}!"
         exit 1
     fi
