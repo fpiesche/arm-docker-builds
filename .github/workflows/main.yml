@@ -16,7 +16,7 @@ on:
       - main
 
 env:
-  PLATFORMS: linux/arm/v6,linux/arm/v7,linux/arm64/v8
+  PLATFORMS: linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/amd64
   ARMV6_ONLY: swarmpit-agent
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         IMAGE: ['cups', 'dockergen',  'ioquake3', 'mailpile', 'sane', 'sftp',
-                'swarmpit-agent', 'transmission', 'transmission-rss']
+                'swarmpit-agent', 'transmission', 'transmission-rss', 'upnp-portmap']
 
     steps:
       - uses: actions/checkout@v2
