@@ -17,7 +17,7 @@ if [[ -z ${SERVICE} ]]; then
 fi
 
 while true; do
-    service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":true}}')
+    service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":true},"desired-state":{"running":true}}')
 
     if [[ ! -z $DEBUG ]]; then
         echo "Service spec: $(echo $service_spec | jq)"
