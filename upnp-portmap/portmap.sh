@@ -25,7 +25,7 @@ while true; do
     service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":true},"desired-state":{"running":true}}')
 
     if [[ ! -z ${DEBUG} ]]; then
-        echo "===== Service spec: $(echo ${service_spec} | jq)"
+        echo "===== Service spec: $(echo ${service_spec})"
     fi
 
     if [[ -z ${service_spec} ]]; then
@@ -43,7 +43,7 @@ while true; do
 
     node_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/nodes/${node_id}")
     if [[ ! -z ${DEBUG} ]]; then
-        echo "===== Node spec: $(echo ${node_spec} | jq)"
+        echo "===== Node spec: $(echo ${node_spec})"
     fi
 
     node_ip=$(echo ${node_spec} | grep -Po ${IPADDR_REGEXP})
