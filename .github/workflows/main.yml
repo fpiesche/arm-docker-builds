@@ -26,7 +26,7 @@ jobs:
     # continue-on-error: true
     strategy:
       matrix:
-        IMAGE: ['cups', 'dockergen',  'ioquake3', 'mailpile', 'sane', 'sftp',
+        IMAGE: ['cups', 'ioquake3', 'mailpile', 'sane', 'sftp',
                 'swarmpit-agent', 'transmission', 'transmission-rss', 'upnp-portmap']
 
     steps:
