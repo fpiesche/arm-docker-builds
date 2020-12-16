@@ -26,8 +26,10 @@ jobs:
     # continue-on-error: true
     strategy:
       matrix:
-        IMAGE: ['cups', 'ioquake3', 'mailpile', 'sane', 'sftp',
-                'swarmpit-agent', 'transmission', 'transmission-rss', 'upnp-portmap']
+        # IMAGE: ['cups', 'ioquake3', 'mailpile', 'sane', 'sftp', 'swarmpit-agent',
+        #         'transmission', 'transmission-rss', 'upnp-portmap']
+        IMAGE: ['cups', 'ioquake3', 'sane', 'sftp', 'swarmpit-agent',
+                'transmission', 'transmission-rss', 'upnp-portmap']
 
     steps:
       - uses: actions/checkout@v2
