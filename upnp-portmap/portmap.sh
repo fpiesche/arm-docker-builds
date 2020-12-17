@@ -2,13 +2,7 @@
 
 NODEID_REGEXP='NodeID"\:"(\K\w+)'
 IPADDR_REGEXP='Addr":"(\K[\d\.]+)(?=")'
-
-if [[ -z ${DOCKER_SOCKET} ]]; then
-    DOCKER_SOCKET="/var/run/docker.sock"
-fi
-if [[ -z ${UPDATE_FREQ} ]]; then
-    UPDATE_FREQ=60
-fi
+IGD_DEVICE_REGEXP="(\Khttp.*.xml)"
 
 if [[ -z ${PORTS} ]]; then
     echo "===== No ports defined to forward! Please set the PORTS environment variable to a space separated list of ports to open."
@@ -20,7 +14,15 @@ if [[ -z ${SERVICE} ]]; then
 fi
 
 while true; do
-    current_forwards=$(upnpc -L)
+    if [[ -z ${IGD_DEVICE_URL} ]]; then
+        echo "===== Trying to find IGD device..."
+        IGD_DEVICE_URL=$(upnpc -L | grep -Po ${IGD_DEVICE_REGEXP})
+    fi
+    if [[ -z ${IGD_DEVICE_URL } ]]; then
+        echo "===== Failed to find an IGD device on the network! Try specifying the URL using the IGD_DEVICE_URL environment variable."
+
+    echo "===== Getting current UPNP port mappings..."
+    current_forwards=$(upnpc -u ${IGD_DEVICE_URL} -L)
 
     service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":"true"},"desired-state":{"running":"true"}}')
 
@@ -61,10 +63,10 @@ while true; do
                 echo "===== Port ${port} not currently forwarded."
             else
                 echo "===== Port ${port} currently forwarded to ${current_ip}, removing..."
-                upnpc -d ${port} TCP
+                upnpc -u ${IGD_DEVICE_URL} -d ${port} TCP
             fi
             echo "===== Forwarding port ${port} to ${node_ip}..."
-            upnpc -a ${node_ip} ${port} ${port} TCP -e "Docker service ${SERVICE}"
+            upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${port} ${port} TCP -e "Docker service ${SERVICE}"
         else
             echo "===== Port ${port} correctly forwarded to ${node_ip}, nothing to do."
         fi
