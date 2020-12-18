@@ -18,7 +18,7 @@ while true; do
         echo "===== Trying to find IGD device..."
         IGD_DEVICE_URL=$(upnpc -L | grep -Po ${IGD_DEVICE_REGEXP})
     fi
-    if [[ -z ${IGD_DEVICE_URL } ]]; then
+    if [[ -z ${IGD_DEVICE_URL} ]]; then
         echo "===== Failed to find an IGD device on the network! Try specifying the URL using the IGD_DEVICE_URL environment variable."
 
     echo "===== Getting current UPNP port mappings..."
