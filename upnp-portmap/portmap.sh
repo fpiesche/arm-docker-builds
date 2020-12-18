@@ -23,7 +23,7 @@ while true; do
         exit 1
     fi
 
-    echo "===== Getting current UPNP port mappings..."
+    echo "===== Getting current UPNP port mappings from ${IGD_DEVICE_URL}..."
     current_forwards=$(upnpc -u ${IGD_DEVICE_URL} -L)
 
     service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":"true"},"desired-state":{"running":"true"}}')
@@ -32,48 +32,50 @@ while true; do
         echo "===== Service spec: $(echo ${service_spec})"
     fi
 
-    if [[ -z ${service_spec} ]]; then
-        echo "===== Failed to find service ${SERVICE}!"
-        exit 1
-    fi
-
-    node_id=$(echo ${service_spec} | grep -Po ${NODEID_REGEXP})
-    if [[ -z ${node_id} ]]; then
-        echo "===== Failed to find node ID for ${SERVICE}!"
-        exit 1
-    else
-        echo "===== Service ${SERVICE} found on node ${node_id}."
-    fi
-
-    node_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/nodes/${node_id}")
-    if [[ ! -z ${DEBUG} ]]; then
-        echo "===== Node spec: $(echo ${node_spec})"
-    fi
-
-    node_ip=$(echo ${node_spec} | grep -Po ${IPADDR_REGEXP})
-    if [[ -z ${node_ip} ]]; then
-        echo "===== Failed to find IP address for node ${node_id}!"
-        exit 1
-    else
-        echo "===== IP address for ${node_id} is ${node_ip}."
-    fi
-
-    for port in ${PORTS}; do
-        current_ip=$(echo ${current_forwards} | grep -Po ".*TCP\s+${port}->(\K[\d\.]+)")
-        if [[ -z ${current_ip} ]] || [[ ${node_ip} != ${current_ip} ]]; then
-            if [[ -z ${current_ip} ]]; then
-                echo "===== Port ${port} not currently forwarded."
-            else
-                echo "===== Port ${port} currently forwarded to ${current_ip}, removing..."
-                upnpc -u ${IGD_DEVICE_URL} -d ${port} TCP
-            fi
-            echo "===== Forwarding port ${port} to ${node_ip}..."
-            upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${port} ${port} TCP -e "Docker service ${SERVICE}"
+    if [[ ! -z ${service_spec} ]]; then
+        node_id=$(echo ${service_spec} | grep -Po ${NODEID_REGEXP})
+        if [[ -z ${node_id} ]]; then
+            echo "===== Failed to find node ID for ${SERVICE}!"
+            exit 1
         else
-            echo "===== Port ${port} correctly forwarded to ${node_ip}, nothing to do."
+            echo "===== Service ${SERVICE} found on node ${node_id}."
         fi
-    done
 
-    echo "===== Waiting for next update..."
+        node_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/nodes/${node_id}")
+        if [[ ! -z ${DEBUG} ]]; then
+            echo "===== Node spec: $(echo ${node_spec})"
+        fi
+
+        node_ip=$(echo ${node_spec} | grep -Po ${IPADDR_REGEXP})
+        if [[ -z ${node_ip} ]]; then
+            echo "===== Failed to find IP address for node ${node_id}!"
+            exit 1
+        else
+            echo "===== IP address for ${node_id} is ${node_ip}."
+        fi
+
+        for port in ${PORTS}; do
+            current_ip=$(echo ${current_forwards} | grep -Po ".*TCP\s+${port}->(\K[\d\.]+)")
+            if [[ -z ${current_ip} ]] || [[ ${node_ip} != ${current_ip} ]]; then
+                if [[ -z ${current_ip} ]]; then
+                    echo "===== Port ${port} not currently forwarded."
+                else
+                    echo "===== Port ${port} currently forwarded to ${current_ip}, removing..."
+                    upnpc -u ${IGD_DEVICE_URL} -d ${port} TCP
+                fi
+                echo "===== Forwarding port ${port} to ${node_ip}..."
+                upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${port} ${port} TCP -e "Docker service ${SERVICE}"
+            else
+                echo "===== Port ${port} correctly forwarded to ${node_ip}, nothing to do."
+            fi
+        done
+    else
+        echo "===== Failed to find service ${SERVICE}!"
+        if [[ ! -z ${FAIL_ON_MISSING_SERVICE} ]]; then
+            exit 1
+        fi
+    fi
+
+    echo "===== Waiting for next update cycle..."
     sleep ${UPDATE_FREQ}
 done
