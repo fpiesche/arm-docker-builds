@@ -20,6 +20,8 @@ while true; do
     fi
     if [[ -z ${IGD_DEVICE_URL} ]]; then
         echo "===== Failed to find an IGD device on the network! Try specifying the URL using the IGD_DEVICE_URL environment variable."
+        exit 1
+    fi
 
     echo "===== Getting current UPNP port mappings..."
     current_forwards=$(upnpc -u ${IGD_DEVICE_URL} -L)
