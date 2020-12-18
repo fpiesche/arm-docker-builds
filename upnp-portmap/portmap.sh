@@ -36,11 +36,15 @@ while true; do
         node_id=$(echo ${service_spec} | grep -Po ${NODEID_REGEXP})
         if [[ -z ${node_id} ]]; then
             echo "===== Failed to find node ID for ${SERVICE}!"
-            exit 1
+            if [[ ! -z ${FAIL_ON_MISSING_SERVICE} ]]; then
+                exit 1
+            fi
         else
             echo "===== Service ${SERVICE} found on node ${node_id}."
         fi
+    fi
 
+    if [[ ! -z ${node_id} ]]; then
         node_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/nodes/${node_id}")
         if [[ ! -z ${DEBUG} ]]; then
             echo "===== Node spec: $(echo ${node_spec})"
@@ -49,11 +53,15 @@ while true; do
         node_ip=$(echo ${node_spec} | grep -Po ${IPADDR_REGEXP})
         if [[ -z ${node_ip} ]]; then
             echo "===== Failed to find IP address for node ${node_id}!"
-            exit 1
+            if [[ ! -z ${FAIL_ON_MISSING_SERVICE} ]]; then
+                exit 1
+            fi
         else
             echo "===== IP address for ${node_id} is ${node_ip}."
         fi
+    fi
 
+    if [[ ! -z ${node_ip} ]]; then
         for port in ${PORTS}; do
             current_ip=$(echo ${current_forwards} | grep -Po ".*TCP\s+${port}->(\K[\d\.]+)")
             if [[ -z ${current_ip} ]] || [[ ${node_ip} != ${current_ip} ]]; then
@@ -69,11 +77,6 @@ while true; do
                 echo "===== Port ${port} correctly forwarded to ${node_ip}, nothing to do."
             fi
         done
-    else
-        echo "===== Failed to find service ${SERVICE}!"
-        if [[ ! -z ${FAIL_ON_MISSING_SERVICE} ]]; then
-            exit 1
-        fi
     fi
 
     echo "===== Waiting for next update cycle..."
