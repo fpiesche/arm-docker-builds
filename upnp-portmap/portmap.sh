@@ -1,7 +1,7 @@
 #!/bin/bash
 
 NODEID_REGEXP='NodeID"\:"(\K\w+)'
-IPADDR_REGEXP='Addr":"(\K[\d\.]+)(?=")'
+IPADDR_REGEXP='\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
 IGD_DEVICE_REGEXP="(\Khttp.*.xml)"
 
 if [[ -z ${PORTS} ]]; then
@@ -26,7 +26,8 @@ while true; do
     echo "===== Getting current UPNP port mappings from ${IGD_DEVICE_URL}..."
     current_forwards=$(upnpc -u ${IGD_DEVICE_URL} -L)
 
-    service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"${SERVICE}":true},"desired-state":{"running":true}}')
+    echo "===== Getting service spec for ${SERVICE}..."
+    service_spec=$(curl --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":true},"desired-state":{"running":true}}')
 
     if [[ ! -z ${DEBUG} ]]; then
         echo "===== Service spec: $(echo ${service_spec})"
@@ -50,7 +51,11 @@ while true; do
             echo "===== Node spec: $(echo ${node_spec})"
         fi
 
-        node_ip=$(echo ${node_spec} | grep -Po ${IPADDR_REGEXP})
+        for ip in $(echo ${node_spec} | grep -Po ${IPADDR_REGEXP}); do
+            if [[ ${ip} != "0.0.0.0" ]]; then
+                node_ip=${ip}
+            fi
+        done
         if [[ -z ${node_ip} ]]; then
             echo "===== Failed to find IP address for node ${node_id}!"
             if [[ ! -z ${FAIL_ON_MISSING_SERVICE} ]]; then

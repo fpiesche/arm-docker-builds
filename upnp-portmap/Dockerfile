@@ -5,4 +5,4 @@ ADD portmap.sh /
 
 ENV DOCKER_SOCKET=/var/run/docker.sock UPDATE_FREQ=60
 
-ENTRYPOINT /portmap.sh
+CMD bash -x /portmap.sh
