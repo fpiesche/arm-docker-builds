@@ -13,6 +13,12 @@ if [[ -z ${SERVICE} ]]; then
     exit 1
 fi
 
+# Strip leading and trailing quotes from variable contents
+service_name="${SERVICE%\"}"
+service_name="${service_name#\"}"
+port_numbers="${PORTS%\"}"
+port_numbers="${port_numbers#\"}"
+
 while true; do
     if [[ -z ${IGD_DEVICE_URL} ]]; then
         echo "===== Trying to find IGD device..."
@@ -26,8 +32,8 @@ while true; do
     echo "===== Getting current UPNP port mappings from ${IGD_DEVICE_URL}..."
     current_forwards=$(upnpc -u ${IGD_DEVICE_URL} -L)
 
-    echo "===== Getting service spec for ${SERVICE}..."
-    service_spec=$(curl --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'"${SERVICE}"'":true},"desired-state":{"running":true}}')
+    echo "===== Getting service spec for ${service_name}..."
+    service_spec=$(curl --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'${service_name}'":true},"desired-state":{"running":true}}')
 
     if [[ ! -z ${DEBUG} ]]; then
         echo "===== Service spec: $(echo ${service_spec})"
@@ -36,12 +42,12 @@ while true; do
     if [[ ! -z ${service_spec} ]]; then
         node_id=$(echo ${service_spec} | grep -Po ${NODEID_REGEXP})
         if [[ -z ${node_id} ]]; then
-            echo "===== Failed to find node ID for ${SERVICE}!"
+            echo "===== Failed to find node ID for ${service_name}!"
             if [[ ! -z ${FAIL_ON_MISSING_SERVICE} ]]; then
                 exit 1
             fi
         else
-            echo "===== Service ${SERVICE} found on node ${node_id}."
+            echo "===== Service ${service_name} found on node ${node_id}."
         fi
     fi
 
@@ -67,7 +73,7 @@ while true; do
     fi
 
     if [[ ! -z ${node_ip} ]]; then
-        for port in ${PORTS}; do
+        for port in ${port_numbers}; do
             current_ip=$(echo ${current_forwards} | grep -Po ".*TCP\s+${port}->(\K[\d\.]+)")
             if [[ -z ${current_ip} ]] || [[ ${node_ip} != ${current_ip} ]]; then
                 if [[ -z ${current_ip} ]]; then
@@ -77,7 +83,7 @@ while true; do
                     upnpc -u ${IGD_DEVICE_URL} -d ${port} TCP
                 fi
                 echo "===== Forwarding port ${port} to ${node_ip}..."
-                upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${port} ${port} TCP -e "Docker service ${SERVICE}"
+                upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${port} ${port} TCP -e "Docker service ${service_name}"
             else
                 echo "===== Port ${port} correctly forwarded to ${node_ip}, nothing to do."
             fi
