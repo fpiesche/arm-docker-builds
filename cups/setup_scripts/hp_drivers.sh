@@ -6,7 +6,7 @@ fi
 
 LOCAL_PLUGIN="/tmp/hp-plugin.run"
 
-echo "Downloading HP printer plugin..."
+echo "Downloading HP printer plugin from ${HP_PLUGIN_URL}..."
 wget -O ${LOCAL_PLUGIN} ${HP_PLUGIN_URL}
 wget -O ${LOCAL_PLUGIN}.asc ${HP_PLUGIN_URL}.asc
 yes | hp-plugin -i -p ${LOCAL_PLUGIN}
