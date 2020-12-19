@@ -1,7 +1,7 @@
 # FROM balenalib/raspberry-pi-debian:buster
 FROM debian:buster-slim
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive HP_PLUGIN_URL=https://developers.hp.com/sites/default/files/hplip-3.18.12-plugin.run 
 
 # labels
 LABEL maintainer="Florian Piesche <florian@yellowkeycard.net>" \
