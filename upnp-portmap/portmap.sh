@@ -33,7 +33,7 @@ while true; do
     current_forwards=$(upnpc -u ${IGD_DEVICE_URL} -L)
 
     echo "===== Getting service spec for ${service_name}..."
-    service_spec=$(curl --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'${service_name}'":true},"desired-state":{"running":true}}')
+    service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'${service_name}'":true},"desired-state":{"running":true}}')
 
     if [[ ! -z ${DEBUG} ]]; then
         echo "===== Service spec: $(echo ${service_spec})"
