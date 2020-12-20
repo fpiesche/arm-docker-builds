@@ -1,10 +1,7 @@
 #!/bin/bash
 
-if [ -z HP_PLUGIN_URL ]; then
-    HP_PLUGIN_URL="https://developers.hp.com/sites/default/files/hplip-3.18.12-plugin.run"
-fi
-
-LOCAL_PLUGIN="/tmp/hp-plugin.run"
+HP_PLUGIN_URL="https://developers.hp.com/sites/default/files/hplip-${HPLIP_PLUGIN_VERSION}-plugin.run"
+LOCAL_PLUGIN="/tmp/hplip-${HPLIP_PLUGIN_VERSION}-plugin.run"
 
 echo "Downloading HP printer plugin from ${HP_PLUGIN_URL}..."
 wget -O ${LOCAL_PLUGIN} ${HP_PLUGIN_URL}
