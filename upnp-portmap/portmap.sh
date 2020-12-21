@@ -50,10 +50,6 @@ while true; do
             service_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/services" --data-urlencode 'filters={"name":{"'${service_name}'":true}}')
             log_debug "Service spec for ${service_name}: ${service_spec}"
 
-            log "Getting port numbers for ${service_name}..."
-            port_numbers=$(echo ${service_spec} | grep -Po ${SERVICE_PORTS_REGEXP})
-            log_debug "Port numbers for ${service_name}: ${port_numbers}"
-
             log "Getting task spec for ${service_name}..."
             task_spec=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/tasks" --data-urlencode 'filters={"service":{"'${service_name}'":true},"desired-state":{"running":true}}')
             log_debug "Task spec for ${service_name}: ${task_spec}"
@@ -90,19 +86,27 @@ while true; do
             fi
 
             if [[ ! -z ${node_ip} ]]; then
-                for port in ${port_numbers}; do
+
+                log "Getting internal port numbers to forward for ${service_name}..."
+                internal_ports=$(echo ${service_spec} | grep -Po ${SERVICE_PORTS_REGEXP} | head -n 1)
+                log_debug "Internal ports to forward for ${service_name}: ${internal_ports}"
+
+                for port in ${internal_ports}; do
+                    external_port=$(echo ${service_spec} | grep -Po -m 1 '"TargetPort":'${port}',"PublishedPort":(\K\d*)' | tail -1)
+                    log "Internal port ${port} is exposed as ${external_port}."
                     current_ip=$(echo ${current_forwards} | grep -Po ".*TCP\s+${port}->(\K[\d\.]+)")
                     if [[ -z ${current_ip} ]] || [[ ${node_ip} != ${current_ip} ]]; then
                         if [[ -z ${current_ip} ]]; then
-                            log "Port ${port} not currently forwarded."
+                            log "Port ${external_port} not currently forwarded."
                         else
-                            log "Port ${port} currently forwarded to ${current_ip}, removing..."
-                            upnpc -u ${IGD_DEVICE_URL} -d ${port} TCP
+                            log "Port ${external_port} currently forwarded to ${current_ip}, removing..."
+                            upnpc -u ${IGD_DEVICE_URL} -d ${external_port} TCP
                         fi
-                        log "Forwarding port ${port} to ${node_ip}..."
-                        upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${port} ${port} TCP -e "Docker service ${service_name}"
+                        log "Forwarding port ${external_port} to ${node_ip}..."
+                        upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} TCP -e "Docker service ${service_name}"
+                        upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} UDP -e "Docker service ${service_name}"
                     else
-                        log "Port ${port} correctly forwarded to ${node_ip}, nothing to do."
+                        log "Port ${external_port} correctly forwarded to ${node_ip}, nothing to do."
                     fi
                 done
             fi
