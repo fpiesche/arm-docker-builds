@@ -4,7 +4,7 @@ NODEID_REGEXP='NodeID"\:"(\K\w+)'
 IPADDR_REGEXP='\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
 IGD_DEVICE_REGEXP="(\Khttp.*.xml)"
 SERVICE_NAME_REGEXP='"Spec":{"Name":"(\K[\w\d-]*)'
-SERVICE_PORTS_REGEXP='"upnp.forward_ports":"(\K[\d\w]*)'
+SERVICE_PORTS_REGEXP='"upnp.forward_ports":"(\K[\d\w\s]*)'
 
 function log {
     echo " [INFO] "$1
@@ -30,25 +30,21 @@ fi
 while true; do
     if [[ -z ${IGD_DEVICE_URL} ]]; then
         log "Trying to find IGD device..."
-        upnpc_output=$(upnpc -L)
-        IGD_DEVICE_URL=$(echo ${upnpc_status} | grep -Po ${IGD_DEVICE_REGEXP})
-        check_upnpc_status $? $upnpc_status
+        IGD_DEVICE_URL=$(upnpc -L | grep -Po ${IGD_DEVICE_REGEXP})
     fi
     if [[ -z ${IGD_DEVICE_URL} ]]; then
         log "Failed to find an IGD device on the network! Try specifying the URL using the IGD_DEVICE_URL environment variable."
         exit 1
     fi
-    log_debug "Found IGD at ${IGD_DEVICE_URL}."
 
     log "Getting current UPNP port mappings from ${IGD_DEVICE_URL}..."
     current_forwards=$(upnpc -u ${IGD_DEVICE_URL} -L)
-    check_upnpc_status $? $current_forwards
 
-    log "Getting services with upnp_forward_ports label set..."
+    log "Getting services with upnp.forward_ports label..."
     service_specs=$(curl -s --unix-socket ${DOCKER_SOCKET} -gG -XGET "v132/services" --data-urlencode 'filters={"label":{"upnp.forward_ports":true}}')
     services=$(echo ${service_specs} | grep -Po ${SERVICE_NAME_REGEXP})
 
-    log_debug "Services: ${services}"
+    log "Found: ${services}"
 
     if [[ ! -z ${services} ]]; then
         for service_name in $services; do
@@ -102,23 +98,27 @@ while true; do
 
                 for port in ${internal_ports}; do
                     external_port=$(echo ${service_spec} | grep -Po -m 1 '"TargetPort":'${port}',"PublishedPort":(\K\d*)' | tail -1)
-                    log "${service_name}: Internal port ${port} is exposed as ${external_port}."
-                    current_ip=$(echo ${current_forwards} | grep -Po ".*TCP\s+${port}->(\K[\d\.]+)")
-                    if [[ -z ${current_ip} ]] || [[ ${node_ip} != ${current_ip} ]]; then
-                        if [[ -z ${current_ip} ]]; then
-                            log "${service_name}: Port ${external_port} not currently forwarded."
-                        else
-                            log "${service_name}: Port ${external_port} currently forwarded to ${current_ip}, removing..."
-                            upnpc_output=$(upnpc -u ${IGD_DEVICE_URL} -d ${external_port} TCP)
-                            check_upnpc_status $? $upnpc_output
-                        fi
-                        log "${service_name}: Forwarding port ${external_port} to ${node_ip}..."
-                        upnpc_output=$(upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} TCP -e "Docker service ${service_name}")
-                        check_upnpc_status $? $upnpc_output
-                        upnpc_output=$(upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} UDP -e "Docker service ${service_name}")
-                        check_upnpc_status $? $upnpc_output
+                    if [[ -z ${external_port} ]]; then
+                        log "${service_name}: Internal port ${port} is not exposed on container - not forwarding."
                     else
-                        log "${service_name}: Port ${external_port} correctly forwarded to ${node_ip}, nothing to do."
+                        log "${service_name}: Internal port ${port} is exposed as ${external_port}."
+                        current_ip=$(echo ${current_forwards} | grep -Po ".*TCP\s+${port}->(\K[\d\.]+)")
+                        if [[ -z ${current_ip} ]] || [[ ${node_ip} != ${current_ip} ]]; then
+                            if [[ -z ${current_ip} ]]; then
+                                log "${service_name}: Port ${external_port} not currently forwarded."
+                            else
+                                log "${service_name}: Port ${external_port} currently forwarded to ${current_ip}, removing..."
+                                upnpc_output=$(upnpc -u ${IGD_DEVICE_URL} -d ${external_port} TCP)
+                                check_upnpc_status $? $upnpc_output
+                            fi
+                            log "${service_name}: Forwarding port ${external_port} to ${node_ip}..."
+                            upnpc_output=$(upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} TCP -e "Docker service ${service_name}")
+                            check_upnpc_status $? $upnpc_output
+                            upnpc_output=$(upnpc -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} UDP -e "Docker service ${service_name}")
+                            check_upnpc_status $? $upnpc_output
+                        else
+                            log "${service_name}: Port ${external_port} correctly forwarded to ${node_ip}, nothing to do."
+                        fi
                     fi
                 done
             fi
