@@ -21,22 +21,24 @@
 
 # How to use
 
-Simply add the `upnp.forward_ports` label to your service and set it to the ports you want to forward:
-
-    version: "3.7"
+Simply add the `upnp.forward_ports` label to your service and set it to the service's internal
+ports you want to forward. Separate multiple ports with spaces. Note that forwarding ports won't
+work if they're not published outside of the container.
 
     services:
-      ioquake3_ffa:
-        image: florianpiesche/ioquake3-arm:armv6
+      traefik:
+        image: traefik/traefik
         deploy:
           labels:
-            - "upnp.forward_ports=27960"
-        environment:
-          - STARTUP_CONFIG=configs/ffa.cfg
-          - SERVER_MOTD="pew pew"
-        volumes:
-          - baseq3:/usr/share/games/quake3/baseq3
-          - qconfigs:/usr/share/games/quake3/configs
-        restart: unless-stopped
+            - "upnp.forward_ports=80 443"
+          placement:
+            constraints:
+              - node.role==manager
+        
         ports:
-          - 27960:27960
+          - target: 80
+            published: 81
+          - target: 443
+            published: 444
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
