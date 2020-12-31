@@ -50,5 +50,5 @@ jobs:
           context: ${{ matrix.VERSION }}
           file: ${{ matrix.VERSION }}/Dockerfile
           tags: florianpiesche/mariadb-arm:${{ matrix.VERSION }}
-          platforms: linux/arm/v6,linux/arm/v7,linux/arm64/v8
+          platforms: linux/arm/v7,linux/arm64/v8
           push: true
