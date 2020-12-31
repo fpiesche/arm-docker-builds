@@ -48,6 +48,7 @@ jobs:
         uses: docker/build-push-action@v2.1.0
         with:
           context: ${{ matrix.VERSION }}
+          file: ${{ matrix.VERSION }}/Dockerfile
           tags: florianpiesche/mariadb-arm:${{ matrix.VERSION }}
           platforms: linux/arm/v6,linux/arm/v7,linux/arm64/v8
           push: true
