@@ -112,9 +112,9 @@ while true; do
                                 check_upnpc_status $? $upnpc_output
                             fi
                             log "${service_name}: Forwarding port ${external_port} to ${node_ip}..."
-                            upnpc_output=$(upnpc -e "Docker ${service_name}" -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} TCP 0 "")
+                            upnpc_output=$(upnpc -e "Docker ${service_name}" -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} TCP 86400 "")
                             check_upnpc_status $? $upnpc_output
-                            upnpc_output=$(upnpc -e "Docker ${service_name}" -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} UDP 0 "")
+                            upnpc_output=$(upnpc -e "Docker ${service_name}" -u ${IGD_DEVICE_URL} -a ${node_ip} ${external_port} ${external_port} UDP 86400 "")
                             check_upnpc_status $? $upnpc_output
                         else
                             log "${service_name}: Port ${external_port} correctly forwarded to ${node_ip}, nothing to do."
