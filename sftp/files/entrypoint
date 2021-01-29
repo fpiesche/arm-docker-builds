@@ -31,10 +31,16 @@ chmod 600 /etc/ssh/ssh_host_rsa_key || true
 echo "Add authorized keys"
 if [ -d /home/sftp/.ssh/keys ]; then
     for file in /home/sftp/.ssh/keys/*; do
+        echo "--- Adding $file..."
         cat $file >> /home/sftp/.ssh/authorized_keys
     done
     # Make sure we're not adding duplicate keys
-    sort /home/sftp/.ssh/authorized_keys | uniq > /home/sftp/.ssh/authorized_keys
+    sort /home/sftp/.ssh/authorized_keys | uniq > /home/sftp/.ssh/authorized_keys.unique
+    mv /home/sftp/.ssh/authorized_keys.unique /home/sftp/.ssh/authorized_keys
+
+    echo "Set permissions for authorized_keys file"
+    chmod 0644 /home/sftp/.ssh/authorized_keys
+    chown sftp:sftp /home/sftp/.ssh/*
 fi
 
 echo "Run custom scripts"
