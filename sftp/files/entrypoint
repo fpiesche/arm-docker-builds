@@ -11,6 +11,9 @@ fi
 echo "Create sftp user"
 addgroup -g 1000 sftp
 adduser --ingroup sftp --home /home/sftp --uid 1000 sftp
+# Set random long secure password on user sftp so logins are possible
+pass=$(echo date +%s | sha256sum | base64 | head -c 32; echo | mkpasswd) && \
+    echo "sftp:${pass}" | chpasswd
 
 echo "Generate ssh key pairs for the sftp user"
 mkdir /home/sftp/.ssh
